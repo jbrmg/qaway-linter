@@ -44,6 +44,12 @@ linter-settings:
             params:
               requireHeadlineComments: true
               requireMethodComments: true
+        structs:
+          - targets:
+              - packages: [ "github.com/myrepo/mypkg" ]
+            params:
+              requireHeadlineComments: true
+              requireFieldComments: true
 ```
 
 4. Execute the custom version by running `./custom-gcl run` in your project's root directory.

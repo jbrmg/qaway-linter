@@ -14,10 +14,12 @@ import (
 type Settings struct {
 	FunctionRules  FunctionRules  `json:"functions"`
 	InterfaceRules InterfaceRules `json:"interfaces"`
+	StructRules    StructRules    `json:"structs"`
 }
 
 type FunctionRules []FunctionRule[FunctionRuleResults]
 type InterfaceRules []InterfaceRule[InterfaceRuleResults]
+type StructRules []StructRule[StructRuleResults]
 
 // Target defines filters for rules.
 // Targets allow users to customize to which nodes a rule should apply to.
@@ -40,6 +42,17 @@ func (f FunctionRules) GetMatchingFunctionRules(node ast.Node, pass *analysis.Pa
 // GetMatchingInterfaceRules checks if there are any interface rules whose target filters match the current node.
 func (f InterfaceRules) GetMatchingInterfaceRules(node ast.Node, pass *analysis.Pass, file *ast.File) InterfaceRules {
 	var rules InterfaceRules
+	for _, rule := range f {
+		if rule.IsApplicable(node, pass, file) {
+			rules = append(rules, rule)
+		}
+	}
+	return rules
+}
+
+// GetMatchingStructRules checks if there are any struct rules whose target filters match the current node.
+func (f StructRules) GetMatchingStructRules(node ast.Node, pass *analysis.Pass, file *ast.File) StructRules {
+	var rules StructRules
 	for _, rule := range f {
 		if rule.IsApplicable(node, pass, file) {
 			rules = append(rules, rule)

@@ -48,6 +48,12 @@ func (a *AnalyzerPlugin) Run(pass *analysis.Pass) (interface{}, error) {
 			results := rule.Analyse(node, pass, file)
 			rule.Apply(results, node, pass)
 		}
+
+		structRules := a.Settings.StructRules.GetMatchingStructRules(node, pass, file)
+		for _, rule := range structRules {
+			results := rule.Analyse(node, pass, file)
+			rule.Apply(results, node, pass)
+		}
 		return true
 
 	}
