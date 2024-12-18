@@ -15,23 +15,20 @@ func TestFunctionRule(t *testing.T) {
 
 	testdata := filepath.Join(wd, "testdata")
 	plugin := AnalyzerPlugin{Settings: Settings{
-		FunctionRules: FunctionRules{
+		Targets: []Rules{
 			{
-				Targets: []FunctionTarget{
-					{
-						Target:         Target{Packages: []string{"functions"}},
-						MinLinesOfCode: 10,
+				Packages: []string{"functions"},
+				FunctionRule: &FunctionRule[FunctionRuleResults]{
+					Params: FunctionRuleParameters{
+						RequireHeadlineComment:  true,
+						MinCommentDensity:       0.1,
+						TrivialCommentThreshold: 0.5,
+						MinLoggingDensity:       0.1,
 					},
 				},
-				Params: FunctionRuleParameters{
-					RequireHeadlineComment:  true,
-					MinCommentDensity:       0.1,
-					TrivialCommentThreshold: 0.5,
-					MinLoggingDensity:       0.1,
-				},
 			},
-		}},
-	}
+		},
+	}}
 
 	analyzers, err := plugin.BuildAnalyzers()
 	analysistest.Run(t, testdata, analyzers[0], "functions")

@@ -5,10 +5,6 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-type StructTarget struct {
-	Target
-}
-
 type StructRuleParameters struct {
 	// RequireHeadlineComment determines if a comment must be placed on top of the interface.
 	RequireHeadlineComment bool `json:"requireHeadlineComment"`
@@ -24,8 +20,7 @@ type StructRuleResults struct {
 }
 
 type StructRule[ResultType StructRuleResults] struct {
-	Targets []StructTarget       `json:"targets"`
-	Params  StructRuleParameters `json:"params"`
+	Params StructRuleParameters `json:"params"`
 }
 
 func (i StructRule[ResultType]) IsApplicable(node ast.Node, pass *analysis.Pass, _ *ast.File) bool {
@@ -41,13 +36,7 @@ func (i StructRule[ResultType]) IsApplicable(node ast.Node, pass *analysis.Pass,
 		return false
 	}
 
-	for _, target := range i.Targets {
-		if target.MatchesPackage(pass.Pkg) {
-			return true
-		}
-	}
-
-	return false
+	return true
 }
 
 func (i StructRule[ResultType]) Analyse(node ast.Node, pass *analysis.Pass, _ *ast.File) *StructRuleResults {

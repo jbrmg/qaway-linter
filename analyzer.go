@@ -37,23 +37,30 @@ func (a *AnalyzerPlugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
 func (a *AnalyzerPlugin) Run(pass *analysis.Pass) (interface{}, error) {
 	var file *ast.File
 	inspect := func(node ast.Node) bool {
-		functionRules := a.Settings.FunctionRules.GetMatchingFunctionRules(node, pass, file)
-		for _, rule := range functionRules {
-			results := rule.Analyse(node, pass, file)
-			rule.Apply(results, node, pass)
+		if node == nil {
+			return true
 		}
 
-		interfaceRules := a.Settings.InterfaceRules.GetMatchingInterfaceRules(node, pass, file)
-		for _, rule := range interfaceRules {
-			results := rule.Analyse(node, pass, file)
-			rule.Apply(results, node, pass)
+		target := a.Settings.GetMatchingTarget(pass.Pkg)
+		if target == nil {
+			return true
 		}
 
-		structRules := a.Settings.StructRules.GetMatchingStructRules(node, pass, file)
-		for _, rule := range structRules {
-			results := rule.Analyse(node, pass, file)
-			rule.Apply(results, node, pass)
+		if target.FunctionRule != nil && target.FunctionRule.IsApplicable(node, pass, file) {
+			results := target.FunctionRule.Analyse(node, pass, file)
+			target.FunctionRule.Apply(results, node, pass)
 		}
+
+		if target.InterfaceRule != nil && target.InterfaceRule.IsApplicable(node, pass, file) {
+			results := target.InterfaceRule.Analyse(node, pass, file)
+			target.InterfaceRule.Apply(results, node, pass)
+		}
+
+		if target.StructRule != nil && target.StructRule.IsApplicable(node, pass, file) {
+			results := target.StructRule.Analyse(node, pass, file)
+			target.StructRule.Apply(results, node, pass)
+		}
+
 		return true
 
 	}

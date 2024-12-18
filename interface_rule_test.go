@@ -14,19 +14,19 @@ func TestInterfaceRule(t *testing.T) {
 	}
 
 	testdata := filepath.Join(wd, "testdata")
-	plugin := AnalyzerPlugin{Settings: Settings{InterfaceRules: InterfaceRules{
-		{
-			Targets: []InterfaceTarget{
-				{
-					Target: Target{Packages: []string{"interfaces"}},
+	plugin := AnalyzerPlugin{Settings: Settings{
+		Targets: []Rules{
+			{
+				Packages: []string{"interfaces"},
+				InterfaceRule: &InterfaceRule[InterfaceRuleResults]{
+					Params: InterfaceRuleParameters{
+						RequireHeadlineComment: true,
+						RequireMethodComment:   true,
+					},
 				},
 			},
-			Params: InterfaceRuleParameters{
-				RequireHeadlineComment: true,
-				RequireMethodComment:   true,
-			},
 		},
-	}}}
+	}}
 	analyzers, err := plugin.BuildAnalyzers()
 	analysistest.Run(t, testdata, analyzers[0], "interfaces")
 }

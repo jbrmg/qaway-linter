@@ -28,28 +28,44 @@ linter-settings:
       type: "module"
       description: "Checks for appropriate documentation in code"
       settings:
-        functions:
-          - targets:
-              - packages: [ "github.com/myrepo/mypkg" ]
+        rules:
+          - packages: [ "github.com/myorg/myrepo" ]
+            # This rule demonstrates all available configuration options
+            # If a parameter is not set, it is not enforced.
+            functions:
+              filters:
+                # Apply parameters only to functions with at least 10 lines of code
                 minLinesOfCode: 10
-            params:
-              minCommentDensity: 0.1
-              requireHeadlineComment: true
-              minHeadlineDensity: 0.05
-              trivialCommentThreshold: 0.5
-              minLoggingDensity: 0.05
-        interfaces:
-          - targets:
-              - packages: [ "github.com/myrepo/mypkg" ]
-            params:
-              requireHeadlineComments: true
-              requireMethodComments: true
-        structs:
-          - targets:
-              - packages: [ "github.com/myrepo/mypkg" ]
-            params:
-              requireHeadlineComments: true
-              requireFieldComments: true
+              params:
+                # A method must have at least 10% of comments (headline + inline) compared to its lines of code
+                minCommentDensity: 0.1
+                # A headline comment is required for every method
+                requireHeadlineComment: true
+                # Trivial comments (similarity to method name) are not allowed. 
+                # The threshold indicates the similarity to the method name.
+                # A higher threshold indicates a higher similarity, resulting in less warnings.
+                trivialCommentThreshold: 0.5
+                # Amount of logging statements compared to lines of code. 
+                minLoggingDensity: 0.0
+            interfaces:
+              params:
+                # A headline comment is required for every interface
+                requireHeadlineComment: true
+                # A comment is required for every method in an interface
+                requireMethodComment: true
+            structs:
+              params:
+                # A headline comment is required for every struct
+                requireHeadlineComment: true
+                # A comment is required for every field in a struct
+                requireFieldComment: false
+          - packages: [ "github.com/myorg/myrepo/subpkg" ] # rules for subpackage override super packages
+            functions:
+              filters:
+                minLinesOfCode: 20
+              params:
+                trivialCommentThreshold: 0.5
+                minLoggingDensity: 0.1
 ```
 
 4. Execute the custom version by running `./custom-gcl run` in your project's root directory.

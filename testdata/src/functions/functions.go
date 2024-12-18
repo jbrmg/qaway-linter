@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func shortMethodNoComments() bool {
+func shortMethodNoComments() bool { // want `Method 'shortMethodNoComments' is missing required headline comment` `Method 'shortMethodNoComments' has less than 10% comment density. Actual: 0%` `Method 'shortMethodNoComments' has less than 10% logging density. Actual: 0%`
 	return true
 }
 

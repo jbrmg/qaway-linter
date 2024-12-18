@@ -1,74 +1,73 @@
 package qawaylinter
 
 import (
-	"go/ast"
 	"go/types"
-	"golang.org/x/tools/go/analysis"
 	"strings"
 )
 
 // Settings is the root configuration object for the linter.
+type Settings struct {
+	Targets []Rules `json:"rules"`
+}
+
+// Rules defines rules and to which packages they apply
+// Filters allow users to customize to which nodes a rule should apply to.
+// For example, interfaces in the domain package may require comments, but interfaces in an internal dev package may not.
+//
 // The object is divided into individual rule attributes instead of one generic `rules` object.
 // This makes JSON deserialization of the configuration easier.
 // In addition, it works around limitations in Generics support in Go.
-type Settings struct {
-	FunctionRules  FunctionRules  `json:"functions"`
-	InterfaceRules InterfaceRules `json:"interfaces"`
-	StructRules    StructRules    `json:"structs"`
-}
-
-type FunctionRules []FunctionRule[FunctionRuleResults]
-type InterfaceRules []InterfaceRule[InterfaceRuleResults]
-type StructRules []StructRule[StructRuleResults]
-
-// Target defines filters for rules.
-// Targets allow users to customize to which nodes a rule should apply to.
-// For example, interfaces in the domain package may require comments, but interfaces in an internal dev package may not.
-type Target struct {
+type Rules struct {
 	Packages []string `json:"packages"`
-}
 
-// GetMatchingFunctionRules checks if there are any function rules whose target filters match the current node.
-func (f FunctionRules) GetMatchingFunctionRules(node ast.Node, pass *analysis.Pass, file *ast.File) FunctionRules {
-	var rules FunctionRules
-	for _, rule := range f {
-		if rule.IsApplicable(node, pass, file) {
-			rules = append(rules, rule)
-		}
-	}
-	return rules
-}
-
-// GetMatchingInterfaceRules checks if there are any interface rules whose target filters match the current node.
-func (f InterfaceRules) GetMatchingInterfaceRules(node ast.Node, pass *analysis.Pass, file *ast.File) InterfaceRules {
-	var rules InterfaceRules
-	for _, rule := range f {
-		if rule.IsApplicable(node, pass, file) {
-			rules = append(rules, rule)
-		}
-	}
-	return rules
-}
-
-// GetMatchingStructRules checks if there are any struct rules whose target filters match the current node.
-func (f StructRules) GetMatchingStructRules(node ast.Node, pass *analysis.Pass, file *ast.File) StructRules {
-	var rules StructRules
-	for _, rule := range f {
-		if rule.IsApplicable(node, pass, file) {
-			rules = append(rules, rule)
-		}
-	}
-	return rules
+	FunctionRule  *FunctionRule[FunctionRuleResults]   `json:"functions"`
+	InterfaceRule *InterfaceRule[InterfaceRuleResults] `json:"interfaces"`
+	StructRule    *StructRule[StructRuleResults]       `json:"structs"`
 }
 
 // MatchesPackage checks if the given package matches the target.
 // Returns true if the full package path starts with any of the target packages.
+// Also returns the package that matched.
 // For example, if the target is `["example.com/foo"]`, the package `example.com/foo/bar` will match.
-func (t Target) MatchesPackage(pkg *types.Package) bool {
+func (t Rules) MatchesPackage(pkg *types.Package) (bool, string) {
 	for _, p := range t.Packages {
 		if strings.HasPrefix(pkg.Path(), p) {
-			return true
+			return true, p
 		}
 	}
-	return false
+	return false, ""
+}
+
+// GetMatchingTarget finds the most specific target that matches the given package.
+func (s Settings) GetMatchingTarget(pkg *types.Package) *Rules {
+	var matchingTargets = make(map[*Rules]string)
+
+	for _, t := range s.Targets {
+		if matches, p := t.MatchesPackage(pkg); matches {
+			matchingTargets[&t] = p
+		}
+	}
+
+	return findMostConcreteTarget(matchingTargets)
+}
+
+// findMostConcreteTarget finds the most specific target from a list of matching targets.
+// A target is more specific if the package that matches the given node are more specific than the
+// matching package from the other node.
+// A subpackage is more specific than a package.
+func findMostConcreteTarget(matchingTargets map[*Rules]string) *Rules {
+	var mostConcreteTarget *Rules
+
+	for target, pkg := range matchingTargets {
+		if mostConcreteTarget == nil {
+			mostConcreteTarget = target
+			continue
+		}
+
+		if len(pkg) > len(matchingTargets[mostConcreteTarget]) {
+			mostConcreteTarget = target
+		}
+	}
+
+	return mostConcreteTarget
 }

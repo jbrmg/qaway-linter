@@ -17,8 +17,7 @@ var loggerPattern = regexp.MustCompile("(?i)(log|logger)")
 // the method pattern also covers calls like Printf etc. as (?i)print also matches Printf.
 var loggerMethodPattern = regexp.MustCompile("(?i)(debug|info|warn|error|fatal|print|panic|trace|log)")
 
-type FunctionTarget struct {
-	Target
+type FunctionFilters struct {
 	// MinLinesOfCode determines the minimum number of lines of code that a function must have to be considered.
 	MinLinesOfCode int `json:"minLinesOfCode"`
 }
@@ -48,7 +47,7 @@ type FunctionRuleResults struct {
 }
 
 type FunctionRule[ResultType FunctionRuleResults] struct {
-	Targets []FunctionTarget       `json:"targets"`
+	Filters FunctionFilters        `json:"filters"`
 	Params  FunctionRuleParameters `json:"params"`
 
 	analysisResults *FunctionRuleResults
@@ -64,14 +63,11 @@ func (f FunctionRule[ResultType]) IsApplicable(node ast.Node, pass *analysis.Pas
 	// the result is cached and the analysis is not executed twice.
 	f.analysisResults = f.Analyse(node, pass, file)
 
-	for _, target := range f.Targets {
-		if target.MatchesPackage(pass.Pkg) {
-			if f.analysisResults.BodyLinesOfCode > target.MinLinesOfCode {
-				return true
-			}
-		}
+	if f.analysisResults.BodyLinesOfCode < f.Filters.MinLinesOfCode {
+		return false
 	}
-	return false
+
+	return true
 }
 
 func (f FunctionRule[ResultType]) Analyse(node ast.Node, pass *analysis.Pass, file *ast.File) *FunctionRuleResults {

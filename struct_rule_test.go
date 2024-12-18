@@ -14,19 +14,19 @@ func TestStructRule(t *testing.T) {
 	}
 
 	testdata := filepath.Join(wd, "testdata")
-	plugin := AnalyzerPlugin{Settings: Settings{StructRules: StructRules{
-		{
-			Targets: []StructTarget{
-				{
-					Target: Target{Packages: []string{"struct"}},
+	plugin := AnalyzerPlugin{Settings: Settings{
+		Targets: []Rules{
+			{
+				Packages: []string{"struct"},
+				StructRule: &StructRule[StructRuleResults]{
+					Params: StructRuleParameters{
+						RequireHeadlineComment: true,
+						RequireFieldComment:    true,
+					},
 				},
 			},
-			Params: StructRuleParameters{
-				RequireHeadlineComment: true,
-				RequireFieldComment:    true,
-			},
-		},
-	}}}
+		}},
+	}
 	analyzers, err := plugin.BuildAnalyzers()
 	analysistest.Run(t, testdata, analyzers[0], "struct")
 }
